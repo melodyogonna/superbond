@@ -22,7 +22,8 @@ pub mod superbond {
         uri: String,
         bond: Pubkey,
     ) -> Result<()> {
-        let signer_seeds: &[&[&[u8]]] = &[&[b"info", &[ctx.bumps.token_data]]];
+        let payer_seed = ctx.accounts.signer.to_account_info().key();
+        let signer_seeds: &[&[&[u8]]] = &[&[b"info", payer_seed.as_ref() , &[ctx.bumps.token_data]]];
         let metadata_cpi_ctx = CpiContext::new(
             ctx.accounts.metadata_program.to_account_info(),
             CreateMetadataAccountsV3 {
@@ -34,8 +35,7 @@ pub mod superbond {
                 update_authority: ctx.accounts.token_data.to_account_info(),
                 system_program: ctx.accounts.system_program.to_account_info(),
             },
-        )
-        .with_signer(signer_seeds);
+        ).with_signer(signer_seeds);
         let metadata = DataV2 {
             name,
             symbol,
@@ -68,7 +68,7 @@ pub struct CreateToken<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    #[account(init, seeds = [b"info", signer.key().as_ref(), mint.key().as_ref()], bump, payer = signer, space = DESCRIMINATOR + TokenInfo::INIT_SPACE)]
+    #[account(init, seeds = [b"info", signer.key().as_ref()], bump, payer = signer, space = DESCRIMINATOR + TokenInfo::INIT_SPACE)]
     pub token_data: Account<'info, TokenInfo>,
 
     /// CHECK: Validate address by deriving pda
